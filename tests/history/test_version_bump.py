@@ -1,7 +1,8 @@
 import mock
 
-from semantic_release.history import evaluate_version_bump, replace_version_string
+from semantic_release.history import evaluate_version_bump
 
+from .. import wrapped_config_get
 from . import *
 
 
@@ -51,7 +52,7 @@ def test_should_not_skip_commits_mentioning_other_commits():
 
 
 @mock.patch(
-    "semantic_release.history.config.getboolean", lambda *x: x == PATCH_WIHTOUT_TAG
+    "semantic_release.history.config.get", wrapped_config_get(patch_without_tag=True)
 )
 @mock.patch("semantic_release.history.logs.get_commit_log", lambda *a, **kw: [MINOR])
 def test_should_minor_with_patch_without_tag():
@@ -59,7 +60,7 @@ def test_should_minor_with_patch_without_tag():
 
 
 @mock.patch(
-    "semantic_release.history.config.getboolean", lambda *x: x == PATCH_WIHTOUT_TAG
+    "semantic_release.history.config.get", wrapped_config_get(patch_without_tag=True)
 )
 @mock.patch("semantic_release.history.logs.get_commit_log", lambda *a, **kw: [NO_TAG])
 def test_should_patch_without_tagged_commits():
@@ -67,7 +68,7 @@ def test_should_patch_without_tagged_commits():
 
 
 @mock.patch(
-    "semantic_release.history.config.getboolean", lambda *x: x != PATCH_WIHTOUT_TAG
+    "semantic_release.history.config.get", wrapped_config_get(patch_without_tag=False)
 )
 @mock.patch("semantic_release.history.logs.get_commit_log", lambda *a, **kw: [NO_TAG])
 def test_should_return_none_without_tagged_commits():
@@ -79,16 +80,8 @@ def test_should_return_none_without_commits():
     """
     Make sure that we do not release if there are no commits since last release.
     """
-    with mock.patch("semantic_release.history.config.getboolean", lambda *x: True):
+    with mock.patch("semantic_release.history.config.get", lambda *x: True):
         assert evaluate_version_bump("1.1.0") is None
 
-    with mock.patch("semantic_release.history.config.getboolean", lambda *x: False):
+    with mock.patch("semantic_release.history.config.get", lambda *x: False):
         assert evaluate_version_bump("1.1.0") is None
-
-
-def test_version_bump_maintains_formatting():
-    assert replace_version_string('ver="1.2.3"', "ver", "1.2.4") == 'ver="1.2.4"'
-    assert (
-        replace_version_string("version = '1.2.3'", "version", "1.2.4")
-        == "version = '1.2.4'"
-    )

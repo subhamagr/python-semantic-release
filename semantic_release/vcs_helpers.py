@@ -131,26 +131,23 @@ def commit_new_version(version: str):
 
     :param version: Version number to be used in the commit message.
     """
-    commit_subject = config.get("semantic_release", "commit_subject")
+    from .history import load_version_patterns
+
+    commit_subject = config.get("commit_subject")
     message = commit_subject.format(version=version)
 
     # Add an extended message if one is configured
-    commit_message = config.get("semantic_release", "commit_message")
+    commit_message = config.get("commit_message")
     if commit_message:
         message += "\n\n"
         message += commit_message.format(version=version)
 
-    commit_author = config.get(
-        "semantic_release",
-        "commit_author",
-        fallback="semantic-release <semantic-release>",
-    )
+    commit_author = config.get("commit_author", "semantic-release <semantic-release>",)
 
-    version_file = config.get("semantic_release", "version_variable").split(":")[0]
-    # get actual path to filename, to allow running cmd from subdir of git root
-    version_filepath = PurePath(os.getcwd(), version_file).relative_to(repo.working_dir)
+    for pattern in load_version_patterns():
+        git_path = PurePath(os.getcwd(), pattern.path).relative_to(repo.working_dir)
+        repo.git.add(str(git_path))
 
-    repo.git.add(str(version_filepath))
     return repo.git.commit(m=message, author=commit_author)
 
 
@@ -187,7 +184,7 @@ def push_new_version(
     server = "origin"
     if auth_token:
         token = auth_token
-        if config.get("semantic_release", "hvcs") == "gitlab":
+        if config.get("hvcs") == "gitlab":
             token = "gitlab-ci-token:" + token
         actor = os.environ.get("GITHUB_ACTOR")
         if actor:
