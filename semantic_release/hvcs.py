@@ -64,6 +64,10 @@ class Github(Base):
     """
 
     API_URL = "https://api.github.com"
+    SERVER_HOST = os.environ.get("GH_SERVER_HOST", None)
+    if SERVER_HOST:
+        API_URL = "https://" + SERVER_HOST + "/api/v3"
+
     _fix_mime_types()
 
     @staticmethod
@@ -72,6 +76,9 @@ class Github(Base):
 
         :return: The Github domain
         """
+        if Github.SERVER_HOST:
+            return Github.SERVER_HOST
+
         return "github.com"
 
     @staticmethod
